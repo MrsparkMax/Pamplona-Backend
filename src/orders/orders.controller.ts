@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Post, Put, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -18,15 +18,23 @@ export class OrdersController {
     return this.ordersService.findById(+id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Body() body: { customer_id: number; restaurant_id: number; driver_id?: number; delivery_address_id?: number; order_status?: string; total_amount: number }) {
+  async create(
+    @Req() req: { user: { sub?: number; userId?: number } },
+    @Body() body: { items: number[]; total: number; paymentMethod?: string }
+  ) {
+    // Extract customer/user ID safely from the JWT token payload (sub or userId)
+    const customerId = req.user.sub ?? req.user.userId;
+    if (customerId === undefined) {
+      throw new BadRequestException('User ID is missing from the token');
+    }
+
     return this.ordersService.createOrder(
-      body.customer_id,
-      body.restaurant_id,
-      (body.driver_id || null) as number,
-      (body.delivery_address_id || null) as number,
-      body.order_status || 'PENDING',
-      body.total_amount
+      customerId,
+      body.items,
+      body.total,
+      body.paymentMethod || 'Cash on Delivery'
     );
   }
 
@@ -39,6 +47,14 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    return this.ordersService.deleteOrder(+id);
+    const service = this.ordersService as OrdersService & {
+      deleteOrder?: (orderId: number) => Promise<unknown>;
+    };
+
+    if (typeof service.deleteOrder !== 'function') {
+      throw new BadRequestException('Delete order is not implemented');
+    }
+
+    return service.deleteOrder(+id);
   }
 }

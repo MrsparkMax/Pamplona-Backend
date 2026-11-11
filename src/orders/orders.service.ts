@@ -8,12 +8,30 @@ export class OrdersService {
 
   private pool = () => this.db.getPool();
 
-  async createOrder(customer_id: number, restaurant_id: number, driver_id: number, delivery_address_id: number, order_status: string, total_amount: number) {
+  async createOrder(
+    customer_id: number, 
+    items: number[], 
+    total_amount: number, 
+    payment_method: string = 'Cash on Delivery'
+  ) {
+    // Set default values for optional foreign keys if your DB table requires them
+    const restaurant_id = 1; // Default or mock restaurant ID
+    const order_status = 'PENDING';
+
     const [result] = await this.pool().execute<OkPacket>(
-      'INSERT INTO orders (customer_id, restaurant_id, driver_id, delivery_address_id, order_status, total_amount) VALUES (?, ?, ?, ?, ?, ?)',
-      [customer_id, restaurant_id, driver_id, delivery_address_id, order_status, total_amount]
+      'INSERT INTO orders (customer_id, restaurant_id, order_status, total_amount, payment_method) VALUES (?, ?, ?, ?, ?)',
+      [customer_id, restaurant_id, order_status, total_amount, payment_method]
     );
-    return { order_id: result.insertId, customer_id, restaurant_id, driver_id, delivery_address_id, order_status, total_amount };
+
+    return { 
+      order_id: result.insertId, 
+      customer_id, 
+      restaurant_id, 
+      order_status, 
+      total_amount, 
+      payment_method,
+      items 
+    };
   }
 
   async findById(id: number) {
@@ -31,7 +49,7 @@ export class OrdersService {
     return rows;
   }
 
-  async updateOrder(id: number, partial: { order_status?: string; total_amount?: number; driver_id?: number }) {
+  async updateOrder(id: number, partial: { order_status?: string; total_amount?: number; driver_id?: number; payment_method?: string }) {
     const fields: string[] = [];
     const values: any[] = [];
 
@@ -47,21 +65,25 @@ export class OrdersService {
       fields.push('driver_id = ?');
       values.push(partial.driver_id);
     }
+    if (partial.payment_method !== undefined) {
+      fields.push('payment_method = ?');
+      values.push(partial.payment_method);
+    }
 
     if (fields.length === 0) return await this.findById(id);
 
     values.push(id);
-    const sql = `UPDATE orders SET ${fields.join(', ')} WHERE order_id = ?`;
+    const sql = `UPDATE orders SET ${fields.join(', ')} WHERE id = ?`;
     await this.pool().execute(sql, values);
 
     return this.findById(id);
   }
 
-  async deleteOrder(id: number) {
-    const [res] = await this.pool().execute<OkPacket>(
-      'DELETE FROM orders WHERE order_id = ?',
-      [id]
-    );
-    return res.affectedRows > 0;
+  async deleteUser(id: number) {
+  const [res] = await this.pool().execute<OkPacket>(
+    'DELETE FROM users WHERE id = ?',
+    [id]
+  );
+  return res.affectedRows > 0;
   }
 }
