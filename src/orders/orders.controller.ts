@@ -61,7 +61,6 @@ export class OrdersController {
     @Req() req: { user: { sub?: number; userId?: number } },
     @Body() body: { items: number[]; total: number; paymentMethod?: string; address?: string }
   ) {
-    // Extract customer/user ID safely from the JWT token payload (sub or userId)
     const customerId = req.user.sub ?? req.user.userId;
     if (customerId === undefined) {
       throw new BadRequestException('User ID is missing from the token');
