@@ -1,10 +1,32 @@
-import { BadRequestException, Controller, Get, Post, Put, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Post, Put, Patch, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private ordersService: OrdersService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/all-orders')
+  async getAllOrders() {
+    const [rows] = await (this.ordersService as any).pool().execute(
+      'SELECT o.*, u.username FROM orders o JOIN users u ON o.customer_id = u.id ORDER BY o.created_at DESC'
+    );
+    return rows;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/status')
+  async updateOrderStatus(
+    @Param('id') id: string,
+    @Body('status') status: string
+  ) {
+    const [result] = await (this.ordersService as any).pool().execute(
+      'UPDATE orders SET order_status = ? WHERE order_id = ?',
+      [status, id]
+    );
+    return { success: true, affectedRows: (result as any).affectedRows };
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get()
@@ -22,7 +44,7 @@ export class OrdersController {
   @Post()
   async create(
     @Req() req: { user: { sub?: number; userId?: number } },
-    @Body() body: { items: number[]; total: number; paymentMethod?: string }
+    @Body() body: { items: number[]; total: number; paymentMethod?: string; address?: string }
   ) {
     // Extract customer/user ID safely from the JWT token payload (sub or userId)
     const customerId = req.user.sub ?? req.user.userId;
