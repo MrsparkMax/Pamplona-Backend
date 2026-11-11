@@ -16,6 +16,21 @@ export class OrdersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('my-orders')
+  async getMyOrders(@Req() req: { user: { sub?: number; userId?: number } }) {
+    const customerId = req.user.sub ?? req.user.userId;
+    if (customerId === undefined) {
+      throw new BadRequestException('User ID is missing from the token');
+    }
+
+    const [rows] = await (this.ordersService as any).pool().execute(
+      'SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC',
+      [customerId]
+    );
+    return rows;
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch(':id/status')
   async updateOrderStatus(
     @Param('id') id: string,
