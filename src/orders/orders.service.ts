@@ -15,8 +15,7 @@ export class OrdersService {
     payment_method: string = 'Cash on Delivery',
     address: string = ''
   ) {
-    // Set default values for optional foreign keys if your DB table requires them
-    const restaurant_id = 1; // Default or mock restaurant ID
+    const restaurant_id = 1;
     const order_status = 'PENDING';
 
     const [result] = await this.pool().execute<OkPacket>(

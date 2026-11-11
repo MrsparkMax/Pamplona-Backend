@@ -70,7 +70,8 @@ export class OrdersController {
       customerId,
       body.items,
       body.total,
-      body.paymentMethod || 'Cash on Delivery'
+      body.paymentMethod || 'Cash on Delivery',
+      body.address || '' // <-- Ensures address is passed properly
     );
   }
 
