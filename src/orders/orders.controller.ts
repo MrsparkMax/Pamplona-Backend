@@ -43,8 +43,9 @@ export class OrdersController {
     return { success: true, affectedRows: (result as any).affectedRows };
   }
 
+  // Unique route path for admin deletion to prevent collision
   @UseGuards(JwtAuthGuard)
-  @Delete('admin/:id')
+  @Delete('admin/order/:id')
   async adminRemove(@Param('id') id: string) {
     return this.ordersService.deleteOrderAsAdmin(+id);
   }
