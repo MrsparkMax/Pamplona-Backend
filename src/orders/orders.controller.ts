@@ -44,6 +44,12 @@ export class OrdersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Delete('admin/:id')
+  async adminRemove(@Param('id') id: string) {
+    return this.ordersService.deleteOrderAsAdmin(+id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getAll() {
     return this.ordersService.getAll();
@@ -71,7 +77,7 @@ export class OrdersController {
       body.items,
       body.total,
       body.paymentMethod || 'Cash on Delivery',
-      body.address || '' // Passes the address properly to the service
+      body.address || ''
     );
   }
 
