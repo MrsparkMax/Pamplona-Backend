@@ -84,6 +84,19 @@ export class OrdersService {
     return this.findById(id);
   }
 
+  async deleteOrderAsAdmin(orderId: number) {
+    const [res] = await this.pool().execute<OkPacket>(
+      'DELETE FROM orders WHERE order_id = ?',
+      [orderId]
+    );
+
+    if (res.affectedRows === 0) {
+      throw new Error('Order not found');
+    }
+
+    return { success: true, affectedRows: res.affectedRows };
+  }
+
   async deleteUser(id: number) {
     const [res] = await this.pool().execute<OkPacket>(
       'DELETE FROM users WHERE id = ?',
