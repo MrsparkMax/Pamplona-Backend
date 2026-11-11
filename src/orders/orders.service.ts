@@ -12,15 +12,16 @@ export class OrdersService {
     customer_id: number, 
     items: number[], 
     total_amount: number, 
-    payment_method: string = 'Cash on Delivery'
+    payment_method: string = 'Cash on Delivery',
+    address: string = ''
   ) {
     // Set default values for optional foreign keys if your DB table requires them
     const restaurant_id = 1; // Default or mock restaurant ID
     const order_status = 'PENDING';
 
     const [result] = await this.pool().execute<OkPacket>(
-      'INSERT INTO orders (customer_id, restaurant_id, order_status, total_amount, payment_method) VALUES (?, ?, ?, ?, ?)',
-      [customer_id, restaurant_id, order_status, total_amount, payment_method]
+      'INSERT INTO orders (customer_id, restaurant_id, order_status, total_amount, payment_method, address) VALUES (?, ?, ?, ?, ?, ?)',
+      [customer_id, restaurant_id, order_status, total_amount, payment_method, address]
     );
 
     return { 
@@ -30,6 +31,7 @@ export class OrdersService {
       order_status, 
       total_amount, 
       payment_method,
+      address,
       items 
     };
   }
@@ -49,7 +51,7 @@ export class OrdersService {
     return rows;
   }
 
-  async updateOrder(id: number, partial: { order_status?: string; total_amount?: number; driver_id?: number; payment_method?: string }) {
+  async updateOrder(id: number, partial: { order_status?: string; total_amount?: number; driver_id?: number; payment_method?: string; address?: string }) {
     const fields: string[] = [];
     const values: any[] = [];
 
@@ -69,21 +71,25 @@ export class OrdersService {
       fields.push('payment_method = ?');
       values.push(partial.payment_method);
     }
+    if (partial.address !== undefined) {
+      fields.push('address = ?');
+      values.push(partial.address);
+    }
 
     if (fields.length === 0) return await this.findById(id);
 
     values.push(id);
-    const sql = `UPDATE orders SET ${fields.join(', ')} WHERE id = ?`;
+    const sql = `UPDATE orders SET ${fields.join(', ')} WHERE order_id = ?`;
     await this.pool().execute(sql, values);
 
     return this.findById(id);
   }
 
   async deleteUser(id: number) {
-  const [res] = await this.pool().execute<OkPacket>(
-    'DELETE FROM users WHERE id = ?',
-    [id]
-  );
-  return res.affectedRows > 0;
+    const [res] = await this.pool().execute<OkPacket>(
+      'DELETE FROM users WHERE id = ?',
+      [id]
+    );
+    return res.affectedRows > 0;
   }
 }
