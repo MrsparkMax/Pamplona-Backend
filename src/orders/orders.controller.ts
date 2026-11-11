@@ -10,7 +10,7 @@ export class OrdersController {
   @Get('admin/all-orders')
   async getAllOrders() {
     const [rows] = await (this.ordersService as any).pool().execute(
-      'SELECT o.*, u.username FROM orders o JOIN users u ON o.customer_id = u.id ORDER BY o.created_at DESC'
+      'SELECT o.order_id, o.customer_id, o.address, o.payment_method, o.total_amount, o.order_status, o.created_at, u.username FROM orders o JOIN users u ON o.customer_id = u.id ORDER BY o.created_at DESC'
     );
     return rows;
   }
@@ -24,7 +24,7 @@ export class OrdersController {
     }
 
     const [rows] = await (this.ordersService as any).pool().execute(
-      'SELECT * FROM orders WHERE customer_id = ? ORDER BY created_at DESC',
+      'SELECT order_id, customer_id, restaurant_id, driver_id, delivery_address_id, address, order_status, total_amount, payment_method, created_at FROM orders WHERE customer_id = ? ORDER BY created_at DESC',
       [customerId]
     );
     return rows;
@@ -71,7 +71,7 @@ export class OrdersController {
       body.items,
       body.total,
       body.paymentMethod || 'Cash on Delivery',
-      body.address || '' // <-- Ensures address is passed properly
+      body.address || '' // Passes the address properly to the service
     );
   }
 
